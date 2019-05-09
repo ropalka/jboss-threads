@@ -1596,7 +1596,13 @@ public final class EnhancedQueueExecutor extends AbstractExecutorService impleme
         assert ! holdsLock(headLock) && ! holdsLock(tailLock);
         Thread thread;
         try {
-            thread = threadFactory.newThread(new ThreadBody(runnable));
+            final Thread currentThread = Thread.currentThread();
+            final ClassLoader old = JBossExecutors.getAndSetContextClassLoader(currentThread, JBossExecutors.SAFE_CL);
+            try {
+                thread = threadFactory.newThread(new ThreadBody(runnable));
+            } finally {
+                JBossExecutors.setContextClassLoader(currentThread, old);
+            }
         } catch (Throwable t) {
             if (runnable != null) {
                 if (UPDATE_STATISTICS) rejectedTaskCounter.increment();
